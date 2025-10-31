@@ -1,0 +1,14 @@
+#Gitignore
+
+# macOS
+.DS_Store
+
+#Files
+*.txt
+*.csv
+#Results
+
+#Plots
+*.png
+*.pdf
+
