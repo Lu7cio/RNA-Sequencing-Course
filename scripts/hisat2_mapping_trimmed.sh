@@ -7,14 +7,14 @@
 #SBATCH --job-name=fastqc_analysis
 #SBATCH --mail-user=mario.kummer@students.unibe.ch
 #SBATCH --mail-type=BEGIN,END
-#SBATCH --output=/data/users/mkummer/RNA-Sequencing-Course/logs/hisat2_GRCm39/mapping/trimmed/hisat2_mapping_%j.o
-#SBATCH --error=/data/users/mkummer/RNA-Sequencing-Course/logs/hisat2_GRCm39/mapping/trimmed/hisat2_mapping_error_%j.e
+#SBATCH --output=/data/users/mkummer/RNA-Sequencing-Course/logs/hisat2_GRCm39/mapping/trimmed/hisat2_mapping_summary%j.o
+#SBATCH --error=/data/users/mkummer/RNA-Sequencing-Course/logs/hisat2_GRCm39/mapping/trimmed/hisat2_mapping_summary_error_%j.e
 #SBATCH --array=1-15
 
 #Define raw data paths, continers path and output paths and raw data pattern
 input_fastq_trimmed_dir="/data/users/mkummer/RNA-Sequencing-Course/results/fastp_trimming"
 input_index_reference="/data/users/mkummer/RNA-Sequencing-Course/results/hisat2_GRCm39/indexing/GRCm39"
-RESULTS_DIR="/data/users/mkummer/RNA-Sequencing-Course/results/hisat2_GRCm39/mapping"
+RESULTS_DIR="/data/users/mkummer/RNA-Sequencing-Course/results/hisat2_GRCm39/samtools/converted_bam"
 SIF_PATH="/containers/apptainer/hisat2_samtools_408dfd02f175cd88.sif"
 FASTQ_PATTERN_1="*_1_trimmed.fastq.gz"
 FASTQ_PATTERN_2="*_2_trimmed.fastq.gz"
@@ -40,15 +40,15 @@ echo "R2 file: $R2"
 apptainer exec \
   --bind /data/users/mkummer/RNA-Sequencing-Course:/data/users/mkummer/RNA-Sequencing-Course \
   "$SIF_PATH" \
-  hisat2 \
-    -x "$input_index_reference" \
-    -1 "$R1" \
-    -2 "$R2" \
+  bash -c "hisat2 \
+    -x '$input_index_reference' \
+    -1 '$R1' \
+    -2 '$R2' \
     --rna-strandness RF \
-    --dta \
     -p 4 \
-    -S "$RESULTS_DIR/${SAMPLE}.sam"
-
+    --new-summary \
+    --summary-file '$RESULTS_DIR/${SAMPLE}_summary.txt' \
+  | samtools view -@ 4 -bS - > '$RESULTS_DIR/${SAMPLE}.bam'"
 
 
 

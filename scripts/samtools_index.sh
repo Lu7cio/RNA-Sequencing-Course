@@ -7,13 +7,13 @@
 #SBATCH --job-name=fastqc_analysis
 #SBATCH --mail-user=mario.kummer@students.unibe.ch
 #SBATCH --mail-type=BEGIN,END
-#SBATCH --output=/data/users/mkummer/RNA-Sequencing-Course/logs/samtools/index/samtools_index_%j.o
-#SBATCH --error=/data/users/mkummer/RNA-Sequencing-Course/logs/samtools/index/samtools_index_error_%j.e
+#SBATCH --output=/data/users/mkummer/RNA-Sequencing-Course/logs/hisat2_GRCm39/samtools/index/samtools_index_%j.o
+#SBATCH --error=/data/users/mkummer/RNA-Sequencing-Course/logs/hisat2_GRCm39/samtools/index/samtools_index_error_%j.e
 #SBATCH --array=1-15
 
 #Define raw data paths, continers path and output paths and raw data pattern
-input_bam_files="/data/users/mkummer/RNA-Sequencing-Course/results/samtools/sorted_bam"
-RESULTS_DIR="/data/users/mkummer/RNA-Sequencing-Course/results/samtools/indexed_bam"
+input_bam_files="/data/users/mkummer/RNA-Sequencing-Course/results/hisat2_GRCm39/samtools/sorted_bam"
+RESULTS_DIR="/data/users/mkummer/RNA-Sequencing-Course/results/hisat2_GRCm39/samtools/indexed_bam"
 SIF_PATH="/containers/apptainer/hisat2_samtools_408dfd02f175cd88.sif"
 SAM_PATTERN_1="*.bam"
 
