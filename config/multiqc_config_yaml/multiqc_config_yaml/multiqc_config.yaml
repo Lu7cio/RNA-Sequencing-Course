@@ -1,0 +1,17 @@
+report_title: "RNA-seq Workflow QC Report"
+
+module_order:
+  - fastqc
+  - fastp
+  - hisat2
+  - featureCounts
+
+sample_names:
+  "*_1_fastqc": "{sample}_raw_R1"
+  "*_2_fastqc": "{sample}_raw_R2"
+  "*_1_trimmed_fastqc": "{sample}_trimmed_R1"
+  "*_2_trimmed_fastqc": "{sample}_trimmed_R2"
+
+report_header_info:
+  - Author: "Mario Kummer"
+  - Project: "RNA-seq Course"
