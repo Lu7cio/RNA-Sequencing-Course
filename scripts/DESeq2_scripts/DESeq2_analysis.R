@@ -1,9 +1,8 @@
-#R-Script for Step 5-7 of Workflow: 
-# Exploratory data analysis, Differential expression analysis, Overrepresentation analysis.
+#R-Script for Step 5-7 of workflow: 
+# 5. Exploratory data analysis, 6. Differential expression analysis, 7. Overrepresentation analysis.
 
 
 #-----------------------------------------------------------------------------------------------------
-
 
 #Import libraries
 library(DESeq2)
@@ -22,15 +21,22 @@ library(grid)
 library(cowplot)
 library(viridis)
 library(reshape2)
+library(enrichplot)
+
+#-----------------------------------------------------------------------------------------------------
+
+#Define the file path for reading the featureCount data
+file_path_featureCounts_data = "/Users/mariokummer/Desktop/RNA-Sequencing/data/DESeq_2_data/all_samples_counts.txt"
+
+# Define the file path for saving the plots
+base_save_path <- "/Users/mariokummer/Desktop/RNA-Sequencing-Course/results/DESeq2/"
 
 #-----------------------------------------------------------------------------------------------------
 
 
-
+#""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 #5. Exploratory data analysis
-
-#File path to featureCount data file
-file_path_featureCounts_data = "/Users/mariokummer/Desktop/RNA-Sequencing/data/DESeq_2_data/all_samples_counts.txt"
+#""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 # Read FeatureCounts data
 counts <- read.table(file_path_featureCounts_data, header=TRUE, row.names=1)
@@ -110,19 +116,7 @@ percentVar <- attr(PCA_plot_data, "percentVar")
 pc1_var <- round(100 * percentVar[1],2)
 pc2_var <- round(100 * percentVar[2],2)
 
-# Create the diffrent pastle colours for the data points in the plot
-intense_pastel <- function(n) {
-  base_cols <- c(
-    "#FF6F61", # coral
-    "#FFA500", # orange
-    "#6B5B95", # purple
-    "#8DD3C7"  # teal
-  )
-  cols <- base_cols[1:n]
-  adjustcolor(cols, alpha.f = 1)
-}
-
-#Plot PCA as custome ggplot and store in variable
+#Plot PCA as custom ggplot and store in variable
 PCA_plot <- ggplot(PCA_plot_data, aes(x = PC1, y = PC2, color = condition)) +
   geom_point(size = 4.5, shape = 17) +                     
   geom_text_repel(
@@ -162,7 +156,7 @@ PCA_plot <- ggplot(PCA_plot_data, aes(x = PC1, y = PC2, color = condition)) +
 PCA_plot
 
 # Save PCA plot as png
-ggsave("/Users/mariokummer/Desktop/RNA-Sequencing/results/DESeq2/PCA_plot_Lung_samples.png",
+ggsave(paste0(base_save_path,"PCA_plot_Lung_samples.png"),
        plot = PCA_plot,      # your ggplot object
        width = 8,          # in inches
        height = 6,         # in inches
@@ -172,14 +166,17 @@ ggsave("/Users/mariokummer/Desktop/RNA-Sequencing/results/DESeq2/PCA_plot_Lung_s
 #-----------------------------------------------------------------------------------------------------
 
 
+#""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 #6. Differential Expression (DE) analysis
+#""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+
 
 #================================================
   #1. Volcano plot for each experimental group
 #================================================
 
-
-# Extract the DE test results for each comaparison between experimental groups
+# Extract the DE test results for each comparison between experimental groups
 res_wt <- results(dds, contrast = c("condition", "Lung_WT_Case", "Lung_WT_Control"))
 res_dko <- results(dds, contrast = c("condition", "Lung_DKO_Case", "Lung_DKO_Control"))
 res_case <- results(dds, contrast = c("condition", "Lung_DKO_Case", "Lung_WT_Case"))
@@ -212,6 +209,7 @@ custom_subtitles <- c(
   "Lung Wild-Type Control vs. Lung Double-Knockout (Ifnar−/− × Ifngr−/−) Control"
 )
 
+#padj value threshold for each contrast  from res_list, needed for determination which data points with label (Gen name) are shown in plot
 padj_treshold = c(100,50,100,10)
 
 # Loop through each DESeq2 result to create individual volcano plots
@@ -233,19 +231,19 @@ for (i in seq_along(res_list)) {
   # Replace NAs with ENSEMBL ID (preserve names!)
   symbols[is.na(symbols)] <- names(symbols)[is.na(symbols)]
   
-  
+  # Assigne symboly to res data
   res$symbol <- symbols
   
-  # Filter significant genes
+  # Calculate the -log10 for padj for better representation in plot, assigen to new column in res
   res$negLog10padj <- -log10(res$padj)
+
+  # Filter significant genes, not NA & negative Log10(padj) is greater than the corresponding threshold
   sig_res <- res[!is.na(res$negLog10padj) & res$negLog10padj > padj_treshold[i], ]
 
-  
-  # Top 50 up- and down-regulated genes
+  # Top up- and down-regulated genes log2FoldChange > |2.5|
   up_genes <- sig_res[sig_res$log2FoldChange > 2.5, ]
   up_genes <- as.data.frame(up_genes)
   top_up <- up_genes[order(up_genes$negLog10padj), ]
-  
   down_genes <- sig_res[sig_res$log2FoldChange < - 2.5, ]
   down_genes <- as.data.frame(down_genes)
   top_down <- down_genes[order(down_genes$negLog10padj), ]
@@ -253,46 +251,44 @@ for (i in seq_along(res_list)) {
   # All top genes (Up and down reg.)
   top_genes <- c(top_up$symbol, top_down$symbol)
   
-  top_genes
-  
   # Remove NA padj rows
   res_valid <- res[!is.na(res$padj), ]
   
-  # Get count of total DE genes, DE genes belo padj < 0.05, Up-/down-reg. genes
+  # Get count of total DE genes, DE genes below padj < 0.05, Up-/down-reg. genes
   total_genes <- nrow(res_valid)
   number_genes_below <- sum(res_valid$padj < 0.05)
   up_reg_genes <- sum(res_valid$padj < 0.05 & res_valid$log2FoldChange > 0)
   down_reg_genes <- sum(res_valid$padj < 0.05 & res_valid$log2FoldChange < 0)
   
-  # Create custome volcano plot
+  # Create custom volcano plot for each contrast (Lung WT Case vs. Lung DKO Case, ... etc.)
   volcano_plot <- EnhancedVolcano(
-    res_valid,
-    pCutoff = 0.05,      
-    FCcutoff = 1.0, 
-    lab = res_valid$symbol,
-    x = 'log2FoldChange',
-    y = 'padj',
-    subtitle = paste("Differential expression:", subtitle_text),
-    pointSize = 1.25,      
-    labSize = 1.5,  
-    drawConnectors = TRUE,
-    widthConnectors = 0.25,
-    typeConnectors = "open",
-    endsConnectors = "first", 
-    colConnectors = "black",
-    selectLab = top_genes,
+    res_valid,                                                       # data for the plot
+    pCutoff = 0.05,                                                  # p-value Cutoff (pointed line in plot)      
+    FCcutoff = 1.0,                                                  # log2FoldChange Cutoff (pointed line in plot)
+    lab = res_valid$symbol,                                          # labels for data points (only for interesting ones)
+    x = 'log2FoldChange',                                            # x-label
+    y = 'padj',                                                      # y-label
+    subtitle = paste("Differential expression:", subtitle_text),     # subtitle for each plot 
+    pointSize = 1.25,                                                # point size of data points
+    labSize = 1.5,                                                   # label size of data points labels
+    drawConnectors = TRUE,                                           # enable connector from data point to label name of data point
+    widthConnectors = 0.25,                                          # width of connector
+    typeConnectors = "open",                                         # type of connector end
+    endsConnectors = "first",                                        # where to apply end connector type
+    colConnectors = "black",                                         # connector color
+    selectLab = top_genes,                                           # set selection for which data points labels are shown
     legendLabels = c('Not significant: p-value > 0.05','High fold change: |Log2(FC)| ≥ 1','Significant: p-value < 0.05', 'High fold change: |Log2(FC)| ≥ 1 & Significant: p-value < 0.05'),
-    legendPosition = 'bottom',
-    legendLabSize = 5,   
-    legendIconSize = 4,
-    shape = 23,
-    title = title_text,
-    caption = bquote(
+    legendPosition = 'bottom',                                       #Legend position
+    legendLabSize = 5,                                               # Legend label size
+    legendIconSize = 4,                                              #Legend icon size
+    shape = 23,                                                      # data points shape
+    title = title_text,                                              # title
+    captionLabSize = 8,                                               # Label size for caption/note
+    caption = bquote( #Custom caption/note to plot, Total/Up/Down regulated genes
       "Total DE genes: " * .(total_genes) * 
         "; Significant DE genes (padj < 0.05): " * .(number_genes_below) *
-        " [Up-reg.: " * .(up_reg_genes) * ", Down-reg.: " * .(down_reg_genes) * "]"),
-    captionLabSize = 8
-  ) + theme(
+        " [Up-reg.: " * .(up_reg_genes) * ", Down-reg.: " * .(down_reg_genes) * "]")) + 
+    theme( #Customization for nice plot theme/layout
     panel.border = element_rect(colour = "black", fill = NA, size = 0.75),
     plot.title = element_text(size = 16),      
     plot.subtitle = element_text(size = 8),     
@@ -303,7 +299,7 @@ for (i in seq_along(res_list)) {
     legend.text = element_text(size = 10),        
     panel.grid.major = element_line(color = "grey80", size = 0.3),  
     panel.grid.minor = element_line(color = "grey90", size = 0.2),   
-    legend.spacing.y = unit(0.0005, "cm"),  
+    legend.spacing.y = unit(0.5, "cm"),  
     legend.margin = margin(t = 0, r = 0, b = 0, l = 0),  
     legend.box.margin = margin(0, 0, 0, 0),              
     plot.margin = margin(t = 10, r = 10, b = 10, l = 10)) + 
@@ -318,36 +314,22 @@ combined_plot <- (volcano_plots[[1]] | volcano_plots[[2]]) /
   (volcano_plots[[3]] | volcano_plots[[4]])
 
 
-# Add seperation lines in 2x2 grid --> 4 boxes with seperate plot
-combined_plot <- ggdraw(combined_plot) +
-  draw_line(x = c(0.5, 0.5), y = c(0, 1), color = "grey80", size = 0.5) +  # vertical line
-  draw_line(x = c(0, 1), y = c(0.5, 0.5), color = "grey80", size = 0.5) +    # horizontal line
-  draw_line(x = c(0, 1), y = c(0, 0),
-            color = "grey60", size = 1) +
-  # top border
-  draw_line(x = c(0, 1), y = c(1, 1),
-            color = "grey60", size = 1) +
-  # left border
-  draw_line(x = c(0, 0), y = c(0, 1),
-            color = "grey60", size = 1) +
-  # right border
-  draw_line(x = c(1, 1), y = c(0, 1),
-            color = "grey60", size = 1)
+# Add separation lines in 2x2 grid --> 4 boxes with separate plot
+combined_plot_with_lines <- ggdraw() +
+  draw_plot(combined_plot, 0, 0, 1, 1) +
+  draw_line(x = c(0.5, 0.5), y = c(0, 1), color = "grey80", size = 0.5) +
+  draw_line(x = c(0, 1), y = c(0.5, 0.5), color = "grey80", size = 0.5) +
+  draw_line(x = c(0, 1), y = c(0, 0), color = "grey60", size = 1) +
+  draw_line(x = c(0, 1), y = c(1, 1), color = "grey60", size = 1) +
+  draw_line(x = c(0, 0), y = c(0, 1), color = "grey60", size = 1) +
+  draw_line(x = c(1, 1), y = c(0, 1), color = "grey60", size = 1)
 
-# Display the combined plot
-print(combined_plot)
-
-  
 # Save as PNG
-png_filename <- paste0("/Users/mariokummer/Desktop/RNA-Sequencing/results/DESeq2/","combined_volcano_plots.png")
-ggsave(filename = png_filename, plot = combined_plot, width = 16, height = 12, dpi = 300)
-
-
-
+ggsave(paste0(base_save_path,"combined_volcano_plots.png"), plot = combined_plot, width = 16, height = 12, dpi = 300)
 
 
 #================================================
-#2. Heatmap with genes of interest
+#2.1 Heatmap with genes of interest
 #================================================
 
 #Define some different expressed genes of interest
@@ -397,11 +379,11 @@ ann_colors <- list(
 ann_df <- data.frame(
   condition = sample_info$condition)
 
+# Rownames of ann_df should be colnames of norm_counts_genes_interest
 rownames(ann_df) <- colnames(norm_counts_genes_interest)
 
 #Define colors for the heatmap
 col_fun <- colorRamp2(c(min(norm_counts_genes_interest), max(norm_counts_genes_interest)), c("#3B78E7", "#FF4C4C"))
-
 
 # Create top annotation correctly
 top_anno <- HeatmapAnnotation(
@@ -432,13 +414,65 @@ heat_plot <- Heatmap(
 )
 
 # Save as PNG
-png("/Users/mariokummer/Desktop/RNA-Sequencing/results/DESeq2/heatmap_gene_interest.png", width = 7000, height = 3500, res = 300)
+png(paste0(base_save_path, "heatmap_gene_interest.png"), width = 7000, height = 3500, res = 300)
 
 # Draw heatmap
 draw(heat_plot)
 
 dev.off()
 
+
+#================================================
+#2.2 Heatmap 3 selected genes
+#================================================
+
+#Define the 3 selected genes 
+genes_three_selected <- c("ENSMUSG00000028270", "ENSMUSG00000078853", "ENSMUSG00000046879")
+
+# Get subset --> only 3 selected genes
+norm_counts_genes_three_selected <- norm_counts_genes[genes_three_selected, , drop = FALSE]
+
+# Map ENSEMBL IDs to gene symbols
+ens_id_three_selected <- rownames(norm_counts_genes_three_selected)
+symbols_three_selected <- mapIds(org.Mm.eg.db, keys = ens_id_three_selected,
+                                column = "SYMBOL", keytype = "ENSEMBL", multiVals = "first")
+
+# Replace rownames in matrix with gene symbols instead Ensemble-ID
+rownames(norm_counts_genes_three_selected) <- symbols_three_selected
+
+# Rownames of ann_df should be colnames of norm_counts_genes_three_selected
+rownames(ann_df) <- colnames(norm_counts_genes_three_selected)
+
+#Plot heatmap and save in variable heat_plot
+heat_plot <- Heatmap(
+  norm_counts_genes_three_selected,
+  name = "Expression:\nNormalized gene count",
+  col = col_fun,
+  cluster_rows = TRUE,
+  cluster_columns = TRUE,
+  column_split = ann_df$Condition,
+  show_column_names = TRUE,
+  show_row_names = TRUE,
+  rect_gp = gpar(col = "black", lwd = 1),
+  top_annotation = top_anno,
+  column_title = "Normalized gene count for 3 selected genes (Gbp2, Igtp, Irgm1)", 
+  column_title_gp = gpar(fontsize = 20, fontface = "bold"), 
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    grid.text(
+      sprintf("%.0f", norm_counts_genes_interest[i, j]), # show as integer
+      x, y,
+      gp = gpar(fontsize = 10, col = "black")
+    )
+  }
+)
+
+# Save as PNG
+png(paste0(base_save_path, "heatmap_gene_three_selected.png"), width = 7000, height = 3500, res = 300)
+
+# Draw heatmap
+draw(heat_plot)
+
+dev.off()
 
 
 
@@ -477,33 +511,61 @@ barplot <- ggplot(df, aes(x = Sample, y = Expression, fill = Gene)) +
 print(barplot)
 
 # Save as PNG
-ggsave("/Users/mariokummer/Desktop/RNA-Sequencing/results/DESeq2/barplot_gene_interest.png", barplot, width = 10, height = 6, dpi = 300)
+ggsave(paste0(base_save_path, "barplot_gene_interest.png"), barplot, width = 10, height = 6, dpi = 300)
 
 
+#================================================
+#3. Barplot with  3 selected genes
+#================================================
+
+# reshape matrix into long format
+df <- data.frame()
+df <- melt(norm_counts_genes_three_selected)
+
+colnames(df) <- c("Gene", "Sample", "Expression")
+
+df$Condition <- sample_info$condition[df$Sample]  
+
+barplot <- ggplot(df, aes(x = Sample, y = Expression, fill = Gene)) +
+  geom_col(position = "dodge") +
+  facet_grid(~ Condition, scales = "free_x", space = "fixed") +
+  theme_bw() +
+  ggtitle("Normalized gene count for 3 selected genes (Gbp2, Igtp, Irgm1)") +
+  xlab("Sample") +
+  ylab("Normalized gene count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom") +
+  scale_y_continuous(breaks = seq(0, max(df$Expression), by = 25000)) +
+  scale_fill_viridis_d(option = "virids") +
+  theme(
+    legend.title = element_text(size = 8),
+    legend.text  = element_text(size = 7),
+    legend.key.size = unit(0.5, "lines"),
+    strip.text = element_text(size = 5, colour = "black")   # ← fixed
+  )
+
+# Draw barplot
+print(barplot)
+
+# Save as PNG
+ggsave(paste0(base_save_path, "barplot_gene_three_selected.png"), barplot, width = 10, height = 6, dpi = 300)
 
 
+#-----------------------------------------------------------------------------------------------------
 
 
+#""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+#7.1 Overrepresentation analysis for gene of interest
+#""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#7. Overrepresentation analysis
+# Get DE genes1
 de_genes <- ens_id_gene_interest
 all_genes <- rownames(res)
-ego <- enrichGO(
+
+# Get enrichGo terms
+ego_gene_interest<- enrichGO(
   gene          = de_genes,        # DE genes
+  universe = all_genes,
   OrgDb         = org.Mm.eg.db,    # mouse annotation
   ont           = "BP",             # Biological Process
   keyType       = "ENSEMBL",
@@ -514,20 +576,135 @@ ego <- enrichGO(
 )
 
 # View top terms
-head(ego)
+head(ego_gene_interest)
 
 # Number of enriched terms
-nrow(ego)
+nrow(ego_gene_interest)
+
+# Dotplot of top 25 GO terms
+go_dotplot <- dotplot(ego_gene_interest, showCategory=25)  +
+              theme(axis.text.x = element_text(size = 5),  
+                    axis.text.y = element_text(size = 5),  
+                    axis.title.x = element_text(size = 10), 
+                    axis.title.y = element_text(size = 10)  
+                    ) + ggtitle("GO Enrichment Dotplot (Gene of interest): Lung DKO Case vs. Lung WT Case")
+
+# Save as PNG
+ggsave(paste0(base_save_path, "enrichGO_dotplot_gene_interest.png"), go_dotplot, width = 10, height = 6, dpi = 300)
+
+# Enrichment Map plot of top 25 GO terms
+go_enrich_map_plot <- emapplot(pairwise_termsim(ego_gene_interest)) + 
+                      ggtitle("GO Enrichment Map (Gene of interest): Lung DKO Case vs. Lung WT Case")
+
+# Save as PNG
+ggsave(paste0(base_save_path,"enrichGO_enrichmentMap_gene_interest.png"), go_enrich_map_plot, width = 20, height = 12, dpi = 300, bg = "white")
+
+# Gene concept Network plot of top 25 GO terms
+go_gene_network_plot <- cnetplot(ego_gene_interest, showCategory = 25, color_category='firebrick', 
+                                 color_item="#3B78E7", howCategoryLabel = TRUE, showCategorySize = TRUE, 
+                                 color_connector = 'black') + 
+                    theme_void() +
+                      theme(
+                        plot.background = element_rect(fill = "white"),
+                        plot.title = element_text(
+                          size = 16,
+                          face = "bold",
+                          hjust = 0.5,       
+                          margin = margin(b = 5, t = 5) 
+                        ),
+                        legend.position = "right",
+                        legend.margin = margin(r = 15),  
+                        legend.spacing.x = unit(0.2, "cm")  
+                      ) + ggtitle("GO Enrichment Gen Network (Gene of interest): Lung DKO Case vs. Lung WT Case")
+
+# Save as PNG
+ggsave(paste0(base_save_path,"enrichGO_gene_network_gene_interest.png"), go_gene_network_plot, width = 20, height = 12, dpi = 300, bg = "white")
+
+# Heatmap of top 25 GO terms
+go_heatmap <- heatplot(ego_gene_interest, showCategory = 25) +
+                theme(axis.text.x = element_text(size = 5),  
+                      axis.text.y = element_text(size = 5),  
+                      axis.title.x = element_text(size = 10), 
+                      axis.title.y = element_text(size = 10))  + 
+                        ggtitle("GO Enrichment Heatmap (Gene of interest): Lung DKO Case vs. Lung WT Case")
+
+# Save as PNG
+ggsave(paste0(base_save_path,"enrichGO_heatmap_gene_interest.png"), go_heatmap, width = 10, height = 6, dpi = 300)
 
 
-# Barplot of top 10 GO terms
-barplot(ego, showCategory=25, title="Top GO terms (BP)")
+#""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+#7.2 Overrepresentation analysis for three selected genes
+#""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-# Dotplot (alternative)
-dotplot(ego, showCategory=25)
+de_genes <- ens_id_three_selected
+all_genes <- rownames(res)
+ego_gene_three_selected <- enrichGO(
+  gene          = de_genes, # DE genes
+  universe = all_genes,
+  OrgDb         = org.Mm.eg.db,    # mouse annotation
+  ont           = "BP",             # Biological Process
+  keyType       = "ENSEMBL",
+  pAdjustMethod = "BH",             # Benjamini-Hochberg correction
+  pvalueCutoff  = 0.05,
+  qvalueCutoff  = 0.2,
+  readable      = TRUE              # convert IDs to gene symbols in output
+)
 
+# View top terms
+head(ego_gene_three_selected)
 
+# Number of enriched terms
+nrow(ego_gene_three_selected)
 
+# Dotplot of top 25 GO terms
+go_dotplot <- dotplot(ego_gene_three_selected, showCategory=25)  +
+  theme(axis.text.x = element_text(size = 5),  
+        axis.text.y = element_text(size = 5),  
+        axis.title.x = element_text(size = 10), 
+        axis.title.y = element_text(size = 10)  
+  ) + ggtitle("GO Enrichment Dotplot (Gbp2, Igtp, Irgm1): Lung DKO Case vs. Lung WT Case")
+
+# Save as PNG
+ggsave(paste0(base_save_path, "enrichGO_dotplot_gene_three_selected.png"), go_dotplot, width = 10, height = 6, dpi = 300)
+
+# Enrichment Map plot of top 25 GO terms
+go_enrich_map_plot <- emapplot(pairwise_termsim(ego_gene_three_selected)) + 
+  ggtitle("GO Enrichment Map (Gbp2, Igtp, Irgm1): Lung DKO Case vs. Lung WT Case")
+
+# Save as PNG
+ggsave(paste0(base_save_path,"enrichGO_enrichmentMap_gene_three_selected.png"), go_enrich_map_plot, width = 20, height = 12, dpi = 300, bg = "white")
+
+# Gene concept Network plot of top 25 GO terms
+go_gene_network_plot <- cnetplot(ego_gene_three_selected, showCategory = 25, color_category='firebrick', 
+                                 color_item="#3B78E7", howCategoryLabel = TRUE, showCategorySize = TRUE, 
+                                 color_connector = 'black') + 
+  theme_void() +
+  theme(
+    plot.background = element_rect(fill = "white"),
+    plot.title = element_text(
+      size = 16,
+      face = "bold",
+      hjust = 0.5,       
+      margin = margin(b = 5, t = 5) 
+    ),
+    legend.position = "right",
+    legend.margin = margin(r = 15),  
+    legend.spacing.x = unit(0.2, "cm")  
+  ) + ggtitle("GO Enrichment Gen Network (Gbp2, Igtp, Irgm1): Lung DKO Case vs. Lung WT Case")
+
+# Save as PNG
+ggsave(paste0(base_save_path,"enrichGO_gene_network_gene_three_selected.png"), go_gene_network_plot, width = 20, height = 12, dpi = 300, bg = "white")
+
+# Heatmap of top 25 GO terms
+go_heatmap <- heatplot(ego_gene_three_selected, showCategory = 25) +
+  theme(axis.text.x = element_text(size = 5),  
+        axis.text.y = element_text(size = 5),  
+        axis.title.x = element_text(size = 10), 
+        axis.title.y = element_text(size = 10))  + 
+  ggtitle("GO Enrichment Heatmap (Gbp2, Igtp, Irgm1): Lung DKO Case vs. Lung WT Case")
+
+# Save as PNG
+ggsave(paste0(base_save_path,"enrichGO_heatmap_gene_three_selected.png"), go_heatmap, width = 10, height = 6, dpi = 300)
 
 
 
