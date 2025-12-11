@@ -65,36 +65,41 @@ In this project the RNA-Seq data from Lung tissous of mouses were analyzed.
 
 
 ### Scripts folder structure
+```bash
 scripts/
-|-- fastp_scripts/                  # Folder for all FastP scripts (Bash)
-|   `-- fastp_trimming.sh           # Script for running FastP trimming on raw lung reads
-|
-|-- fastqc_scripts/                 # Folder for all FastQC scripts (Bash)
-|   |-- fastqc_analysis.sh          # Script for running FastQC on raw lung reads
-|   `-- fastqc_fastp_trimmed.sh     # Script for running FastQC on trimmed lung reads
-|
-|-- featureCounts_scripts/          # Folder for all FeatureCounts scripts (Bash)
-|   `-- feature_counts.sh           # Script for running FeatureCounts on sorted mapped BAM files for each sample
-|
-|-- hisat2_scripts/                 # Folder for all Hisat2 scripts (Bash)
-|   |-- hisat2_indexing.sh          # Script for running Hisat2 indexing on reference genome (*.fa / *.gtf)
-|   `-- hisat2_mapping_trimmed.sh   # Script for running Hisat2 mapping of trimmed lung reads to reference genome
-|
-|-- multiqc_scripts/                # Folder for all MultiQC scripts (Bash)
-|   |-- multiqc_all.sh                      # Run MultiQC on all FastQC reports (FastQC, Hisat2, FeatureCounts)
-|   |-- multiqc_analysis_fastp_trimmed.sh   # MultiQC on Fastp trimmed FastQC reports
-|   |-- multiqc_analysis.sh                 # MultiQC on raw FastQC reports
-|   |-- multiqc_featureCounts.sh            # MultiQC on FeatureCounts reports
-|   `-- multiqc_hisat2_mapping_trimmed.sh   # MultiQC on Hisat2 mapping reports
-|
-|-- old_scripts/                    # Folder for all old/unused scripts (Bash)
-|   |-- hisat2_mapping.sh           # Old Hisat2 mapping script (SAM → BAM not automatic)
-|   `-- samtools_convert.sh         # Old SAM to BAM conversion script
-|
-`-- samtools_scripts/               # Folder for all Samtools scripts (Bash)
-    |-- samtools_index.sh           # Script for indexing sorted BAM files
-    `-- samtools_sort.sh            # Script for sorting mapped BAM files
+├── DESeq2_scripts/                         # Folder for all DESeq2 analysis (R)
+│   ├── DESeq2_analysis.R                   # Script for DESeq2 analysis --> Workflow 5.- 7.
+├── fastp_scripts/                          # Folder for all FastP scripts (Bash)
+│   ├── fastp_trimming.sh                   # Script for running FastP trimming on raw lung reads
+│ 
+├── fastqc_scripts/                         # Folder for all FastQC scripts (Bash)
+│   ├── fastqc_analysis.sh                  # Script for running FastQC on raw lung reads
+│   └── fastqc_fastp_trimmed.sh             # Script for running FastQC on trimmed lung reads
+│ 
+├── featureCounts_scripts/                  # Folder for all FeatureCounts scripts (Bash)
+│   └── feature_counts.sh                   # Script for running FeatureCounts on sorted mapped bam files for each sample
+│   
+├── hisat2_scripts/                         # Folder for all Hisat2 scripts (Bash)
+│   ├── hisat2_indexing.sh                  # Script for running Hisat2 indexing on reference genome file (*.fa / *.gtf)
+│   └── hisat2_mapping_trimmed.sh           # Script for running Hisat2 mapping of trimmed lung reads to reference genome
+│ 
+├── multiqc_scripts/                        # Folder for all Multiqc scripts (Bash)
+│   ├── multiqc_all.sh                      # Script for running Multiqc on all FastQC reports (Fastqc, Hisat2 featureCounts)
+│   ├── multiqc_analysis_fastp_trimmed.sh   # Script for running Multiqc on Fastp trimmed FastQC reports
+│   ├── multiqc_analysis.sh                 # Script for running FastQC on raw lung reads FastQC reports
+│   ├── multiqc_featureCounts.sh            # Script for running FastQC on FeatureCounts FastQC reports
+│   └── multiqc_hisat2_mapping_trimmed.sh   # Script for running FastQC on Hisat2 FastQC reports
+│
+├── old_scripts/                            # Folder for all old scripts, which where not used in final analysis (Bash)
+│   ├── hisat2_mapping.sh                   # Old script for running hisat2 mapping but without direct conversion sam to bam
+│   └── samtools_convert.sh                 # Old script for running samtools conversion sam to bam
+│
+└── samtools_scripts/                       # Folder for all Samtools scripts (Bash)
+    ├── sammtools_index.sh                  # Script for running Samtools indexing mapped, sorted bam files
+    └── samtools_sort.sh                    # Script for running Samtools sorting for mapped bam files
 
+
+```
 
 
 ### Config folder structure
@@ -104,3 +109,5 @@ scripts/
      └── multiqc_config_yaml
          └── multiqc_config.yaml
 ```
+
+
