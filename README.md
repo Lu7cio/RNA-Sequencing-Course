@@ -98,8 +98,9 @@ scripts/
 
 
 ### Config folder structure
-config/
-`-- config/                          # Configuration files
-    `-- multiqc_config_yaml/          # Configuration files for MultiQC
-        `-- multiqc_config.yaml      # YAML config for custom MultiQC report of all FastQC analyses
-
+```bash
+├── config
+ └── multiqc_config_yaml
+     └── multiqc_config_yaml
+         └── multiqc_config.yaml
+```
