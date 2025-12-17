@@ -1,6 +1,6 @@
 # RNA-Sequencing Project
 
-##Author, Course, University
+## Author, Course, University
 Mario Kummer, RNA-Sequencing Course Autumn Semester 2025 , University of Bern
 
 ## Description
@@ -11,10 +11,11 @@ More precise the analysis is based on the data of 4 different experimental group
 - DKO Case (4): SRR7821923–SRR7821927  
 - WT Control (3): SRR7821937–SRR7821939  
 - DKO Control (3): SRR7821940–SRR7821942 
+
 The goal was to produce lists of genes that are differentially expressed between two experimental groups, and identify gene ontology (GO) terms enriched for DE genes.
 
 
-##Software
+## Software
 
 ## Workflow:
 1. FastQC quality control on raw lung reads:
