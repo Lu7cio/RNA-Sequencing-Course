@@ -3,10 +3,10 @@
 ## Author
 Mario Kummer
 
-##Course & University
+## Course & University
 RNA-Sequencing Course Autumn Semester 2025
 
-#University
+# University
 University of Bern
 
 ## Description
