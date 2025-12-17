@@ -1,7 +1,20 @@
-# RNA-Sequencing analysis Project
+# RNA-Sequencing Project
+
+##Author, Course, University
+Mario Kummer, RNA-Sequencing Course Autumn Semester 2025 , University of Bern
 
 ## Description
-In this project the RNA-Seq data from Lung tissous of mouses were analyzed.
+This repository contains a complete RNA-seq analysis pipeline for the study of lung immune responses to Toxoplasma gondii infection in wild-type (WT) and double-knockout (Ifnar−/− × Ifngr−/−; DKO) mice. 
+The data analyzed is subset from the publication Singhania et al. 2019 (https://doi.org/10.1038/s41467-019-10601-6). 
+More precise the analysis is based on the data of 4 different experimental groups (All samples from lung tissues): 
+- WT Case (5): SRR7821918–SRR7821922  
+- DKO Case (4): SRR7821923–SRR7821927  
+- WT Control (3): SRR7821937–SRR7821939  
+- DKO Control (3): SRR7821940–SRR7821942 
+The goal was to produce lists of genes that are differentially expressed between two experimental groups, and identify gene ontology (GO) terms enriched for DE genes.
+
+
+##Software
 
 ## Workflow:
 1. FastQC quality control on raw lung reads:
