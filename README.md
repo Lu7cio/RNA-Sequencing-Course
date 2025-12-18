@@ -3,8 +3,8 @@
 ## Author
 Mario Kummer
 
-## Course & University
-RNA-Sequencing Course Autumn Semester 2025
+## Course
+RNA-Sequencing Course, Autumn Semester 2025
 
 # University
 University of Bern
@@ -40,20 +40,27 @@ R environment managed with renv. See below for full version details.
 
 - R: version 4.5.1 (2025-06-13) 
 - Reproducing the R analysis (to get R environment renv):
+  
   From the project root directory in R:
   ```r
   install.packages("renv")   # if not already installed
   renv::restore()
   ```
   
+#### Download of reference genome from Ensembl FTP (https://www.ensembl.org/info/data/ftp/index.html)
+The reference genome Mus musculus GRCm39 version 115 was downloaded from the Ensemble
+ftp website. From the site the file Mus musculus.GRCm39.dna.primary assembly.fa.gz (Un-
+der section DNA(FASTA)) and for the annotation file named Mus musculus.GRCm39.115.gtf.gz
+(Under section gene sets) was downloaded. 
+  
 ## Workflow of analysis:
 
 ### Workflow Summary steps:
-    The Workflow was split into to major parts, the first part (Step 1 -5) was done in bash scripts for submitting it to SLURM on a HPC-Cluster and the second part (Step 6 - 8) was done in a R script locally:
+The Workflow was split into to major parts, the first part (Step 1 -5) was done in bash scripts for submitting it to SLURM on a HPC-Cluster and the second part (Step 6 - 8) was done in a R script locally. For running the bash scripts on the HPC cluster (With SLURM) the command ```bash sbatch my_script.sh```  followed by the name of the desired script was used.
     1. FastQC quality control on raw lung reads (Bash)
     2. FastP trimming of the raw lung reads (Bash)
     3. FastQC quality control on the trimmed lung reads (Bash)
-    4. Hisat2 maping reads to reference genome / SamTools sam/bam conversion and indexing (Bash)
+    4. Hisat2 maping reads to reference genome / SAMtools sam/bam conversion and indexing (Bash)
     5. FeatureCounts count reads per gen (Bash)
     6. Exploratory data analysis (R)
     7. Differential expression analysis (R)
@@ -69,8 +76,6 @@ R environment managed with renv. See below for full version details.
 
     --> Used script: fastqc_analysis.sh    (In folder fastqc_scripts)
 
-
-
 2. FastP trimming of the raw lung reads:
     This was performed to asses the quality of the raw lung reads. Primarly we want to get ride of the adapter seqeunces at the end of the read, and for this we used the option --detect_adapter_for_pe on the FastP trimm.
 
@@ -80,8 +85,6 @@ R environment managed with renv. See below for full version details.
 
     --> Used script: fastp_trimming.sh    (In folder fastp_scripts)
 
-
-
 3. FastQC quality control on the trimmed lung reads:
     This was performed to asses the quality of the trimmed lung reads, which means we look at the base quality along the read or if there is still  evidence for adapter sequences. This report serves as decicsion foundation if the trimming was secssful and if now the quality of the lung reads is good enough for further downstream analysis.
 
@@ -91,23 +94,36 @@ R environment managed with renv. See below for full version details.
 
     --> Used script: fastqc_fastp_trimmed.sh    (In folder fastqc_scripts)
 
-
-3. FastQC quality control on the trimmed lung reads:
-    This was performed to asses the quality of the trimmed lung reads, which means we look at the base quality along the read or if there is still  evidence for adapter sequences. This report serves as decicsion foundation if the trimming was secssful and if now the quality of the lung reads is good enough for further downstream analysis.
-
-    The FastQC was run on the *fastq* files of the trimmed lung data (For both reads for each sample). 
-
-    --> Used container/apptainer: fastqc-0.12.1.sif (FastQC version 0.12.1)
-
-    --> Used script: fastqc_fastp_trimmed.sh    (In folder fastqc_scripts)
-
-
-4. Hisat2 maping reads to reference genome / SamTools sam/bam conversion and indexing:
-    ???
-
-
+4. Hisat2 maping reads to reference genome & SAMtools sam/bam conversion and sorting/indexing:
+    For this part we need to download the latest reference genome sequence and associated annotation for Mus musculus GRCm39 (Download instruction, see section above).
+    First we have to index the reference genome with Hisat2:
+    
+    The Hisat2 indexing was run on the \*.fa and \*.gtf file:
+    
+    --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1)
+    
+    --> Used script: hisat2_indexing.sh    (In folder hisat2_scripts)
+    
+    Second we map for each sample separately,the fastp trimmed reads to the reference genome using Hisat2. 
+    In the same step we converted the resulting *.sam files from the mapping to readable *.bam files with SAMtools:
+    
+    --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1 & SAMtools version 1.20)
+    
+    --> Used script: hisat2_mapping_trimmed.sh    (In folder hisat2_scripts)
+    
+    Third we sorted the *.bam files by genomic coordinates using Samtools:
+    
+    --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
+    
+    --> Used script: samtools_index.sh    (In folder samtools_scripts)
+    
+    Forth we index the coordinate sorted bam files using SAMtools:
+    
+    --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
+    
+    --> Used script: samtools_sort.sh    (In folder samtools_scripts)
+    
 5. FeatureCounts count reads per gen:
-
 
     The FeatureCounts was run on the sorted *.bam files of the sorted mapped reads to the referece Genome (Mus_musculus.GRCm39). 
 
@@ -115,9 +131,17 @@ R environment managed with renv. See below for full version details.
 
     --> Used script: feature_counts.sh    (In folder featureCounts_scripts)
 
+6.- 8. DESeq2 Differential expression analysis and clusterProfiler Go terms enrichment:
 
-
-
+    This part was all done in one R script. For each of the steps 6. - 8. an section was created in the script. 
+    When you want only one part execute of thes 3 step execute onyl this part in the R script (Pay attention, 
+    some variables or calculations depends on previous step!). It is adviced to run the whole script in once, 
+    so the correctness is ensured and you have all the necessary steps performed. 
+    The steps contains:
+    
+      6. Exploratory data analysis (How the samples cluster based on their gene expression profiles --> PCA Plot).
+      7. Differential expression analysis (Differential Expression for one pairwise contrast, i.e. the comparison between two experimental groups).
+      8. Overrepresentation analysis (Identification Gene Ontology terms that contain more differentially expressed genes than expected by chance for the choosen pairwise comparison)
 
 
 ### Scripts folder structure
@@ -125,6 +149,7 @@ R environment managed with renv. See below for full version details.
 scripts/
 ├── DESeq2_scripts/                         # Folder for all DESeq2 analysis (R)
 │   ├── DESeq2_analysis.R                   # Script for DESeq2 analysis --> Workflow 5.- 7.
+│ 
 ├── fastp_scripts/                          # Folder for all FastP scripts (Bash)
 │   ├── fastp_trimming.sh                   # Script for running FastP trimming on raw lung reads
 │ 
