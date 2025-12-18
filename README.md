@@ -95,44 +95,44 @@ The Workflow was split into to major parts, the first part (Step 1 -5) was done 
     --> Used script: fastqc_fastp_trimmed.sh    (In folder fastqc_scripts)
 
 4. Hisat2 mapping reads to reference genome & SAMtools sam/bam conversion and sorting/indexing:
-    For this part we need to download the latest reference genome sequence and associated annotation for Mus musculus GRCm39 (Download instruction, see section above).
+    For this part we need to download the latest reference genome sequence and associated annotation for Mus musculus GRCm39 (Download instruction, see section above):
     
     
     - First we have to index the reference genome with Hisat2. The Hisat2 indexing was run on the \*.fa and \*.gtf file:
     
-      --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1)
+        --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1)
     
-      --> Used script: hisat2_indexing.sh    (In folder hisat2_scripts)
+        --> Used script: hisat2_indexing.sh    (In folder hisat2_scripts)
     
     
     - Second we map for each sample separately,the fastp trimmed reads to the reference genome using Hisat2. 
       In the same step we converted the resulting *.sam files from the mapping to readable *.bam files with SAMtools:
     
-      --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1 & SAMtools version 1.20)
+        --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1 & SAMtools version 1.20)
     
-      --> Used script: hisat2_mapping_trimmed.sh    (In folder hisat2_scripts)
+        --> Used script: hisat2_mapping_trimmed.sh    (In folder hisat2_scripts)
     
     
     - Third we sorted the *.bam files by genomic coordinates using Samtools:
     
-      --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
+        --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
     
-      --> Used script: samtools_index.sh    (In folder samtools_scripts)
+        --> Used script: samtools_index.sh    (In folder samtools_scripts)
       
     
     - Forth we index the coordinate sorted bam files using SAMtools:
     
-      --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
+        --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
     
-      --> Used script: samtools_sort.sh    (In folder samtools_scripts)
+        --> Used script: samtools_sort.sh    (In folder samtools_scripts)
     
 5. FeatureCounts count reads per gen:
 
     The FeatureCounts was run on the sorted *.bam files of the sorted mapped reads to the referece Genome (Mus_musculus.GRCm39). 
 
-    --> Used container/apptainer: subread_2.0.6.sif (Subread version 0.12.1)
+      --> Used container/apptainer: subread_2.0.6.sif (Subread version 0.12.1)
 
-    --> Used script: feature_counts.sh    (In folder featureCounts_scripts)
+      --> Used script: feature_counts.sh    (In folder featureCounts_scripts)
 
 6.- 8. DESeq2 Differential expression analysis and clusterProfiler Go terms enrichment:
 
