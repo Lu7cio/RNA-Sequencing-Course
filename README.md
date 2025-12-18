@@ -94,34 +94,37 @@ The Workflow was split into to major parts, the first part (Step 1 -5) was done 
 
     --> Used script: fastqc_fastp_trimmed.sh    (In folder fastqc_scripts)
 
-4. Hisat2 maping reads to reference genome & SAMtools sam/bam conversion and sorting/indexing:
+4. Hisat2 mapping reads to reference genome & SAMtools sam/bam conversion and sorting/indexing:
     For this part we need to download the latest reference genome sequence and associated annotation for Mus musculus GRCm39 (Download instruction, see section above).
-    First we have to index the reference genome with Hisat2:
     
-    The Hisat2 indexing was run on the \*.fa and \*.gtf file:
     
-    --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1)
+    - First we have to index the reference genome with Hisat2. The Hisat2 indexing was run on the \*.fa and \*.gtf file:
     
-    --> Used script: hisat2_indexing.sh    (In folder hisat2_scripts)
+      --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1)
     
-    Second we map for each sample separately,the fastp trimmed reads to the reference genome using Hisat2. 
-    In the same step we converted the resulting *.sam files from the mapping to readable *.bam files with SAMtools:
+      --> Used script: hisat2_indexing.sh    (In folder hisat2_scripts)
     
-    --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1 & SAMtools version 1.20)
     
-    --> Used script: hisat2_mapping_trimmed.sh    (In folder hisat2_scripts)
+    - Second we map for each sample separately,the fastp trimmed reads to the reference genome using Hisat2. 
+      In the same step we converted the resulting *.sam files from the mapping to readable *.bam files with SAMtools:
     
-    Third we sorted the *.bam files by genomic coordinates using Samtools:
+      --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (Hisat2 version 2.2.1 & SAMtools version 1.20)
     
-    --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
+      --> Used script: hisat2_mapping_trimmed.sh    (In folder hisat2_scripts)
     
-    --> Used script: samtools_index.sh    (In folder samtools_scripts)
     
-    Forth we index the coordinate sorted bam files using SAMtools:
+    - Third we sorted the *.bam files by genomic coordinates using Samtools:
     
-    --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
+      --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
     
-    --> Used script: samtools_sort.sh    (In folder samtools_scripts)
+      --> Used script: samtools_index.sh    (In folder samtools_scripts)
+      
+    
+    - Forth we index the coordinate sorted bam files using SAMtools:
+    
+      --> Used container/apptainer: hisat2_samtools_408dfd02f175cd88.sif (SAMtools version 1.20)
+    
+      --> Used script: samtools_sort.sh    (In folder samtools_scripts)
     
 5. FeatureCounts count reads per gen:
 
@@ -133,15 +136,15 @@ The Workflow was split into to major parts, the first part (Step 1 -5) was done 
 
 6.- 8. DESeq2 Differential expression analysis and clusterProfiler Go terms enrichment:
 
-    This part was all done in one R script. For each of the steps 6. - 8. an section was created in the script. 
-    When you want only one part execute of thes 3 step execute onyl this part in the R script (Pay attention, 
-    some variables or calculations depends on previous step!). It is adviced to run the whole script in once, 
-    so the correctness is ensured and you have all the necessary steps performed. 
-    The steps contains:
+  This part was all done in one R script. For each of the steps 6. - 8. an section was created in the script. 
+  When you want only one part execute of thes 3 step execute onyl this part in the R script (Pay attention, 
+  some variables or calculations depends on previous step!). It is adviced to run the whole script in once, 
+  so the correctness is ensured and you have all the necessary steps performed. 
+  The steps contains:
     
-      6. Exploratory data analysis (How the samples cluster based on their gene expression profiles --> PCA Plot).
-      7. Differential expression analysis (Differential Expression for one pairwise contrast, i.e. the comparison between two experimental groups).
-      8. Overrepresentation analysis (Identification Gene Ontology terms that contain more differentially expressed genes than expected by chance for the choosen pairwise comparison)
+  6. Exploratory data analysis (How the samples cluster based on their gene expression profiles --> PCA Plot).
+  7. Differential expression analysis (Differential Expression for one pairwise contrast, i.e. the comparison between two experimental groups).
+  8. Overrepresentation analysis (Identification Gene Ontology terms that contain more differentially expressed genes than expected by chance for the choosen pairwise comparison)
 
 
 ### Scripts folder structure
