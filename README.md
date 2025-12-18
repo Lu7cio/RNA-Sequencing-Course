@@ -19,7 +19,6 @@ More precise the analysis is based on the data of 4 different experimental group
 - DKO Control (3x): SRR7821940–SRR7821942 
 
 The goal was to produce lists of genes that are differentially expressed between two experimental groups, and identify gene ontology (GO) terms enriched for DE genes.
-RE  
 
 ## Software & Tool versions
 All analyses were performed using fixed software versions and a reproducible
