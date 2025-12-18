@@ -55,7 +55,7 @@ der section DNA(FASTA)) and for the annotation file named Mus musculus.GRCm39.11
   
 ## Workflow of analysis:
 
-### Workflow Summary steps:
+### Workflow steps Summary:
 The Workflow was split into to major parts, the first part (Step 1 -5) was done in bash scripts for submitting it to SLURM on a HPC-Cluster and the second part (Step 6 - 8) was done in a R script locally. For running the bash scripts on the HPC cluster (With SLURM) the command ```bash sbatch my_script.sh```  followed by the name of the desired script was used.
     1. FastQC quality control on raw lung reads (Bash)
     2. FastP trimming of the raw lung reads (Bash)
